@@ -58,13 +58,15 @@ function parseIcsDate(m) {
   return new Date(+y, +mo - 1, +da, +h, +mi, +s)
 }
 
-// Best event for a recording window: the one with the most overlap, allowing
-// a recording that starts a few minutes early or late.
+// Best event for a recording window: the one with the most overlap. The
+// recording must start during the event or at most 15 minutes before it — a
+// recording that merely runs long into the next event isn't that event.
 export function pickEvent(events, startedAt, endedAt) {
   const slack = 10 * 60000
   const s = startedAt.getTime(), e = Math.max(endedAt.getTime(), s + 60000)
   let best = null, bestScore = 0
   for (const ev of events) {
+    if (s < ev.start.getTime() - 15 * 60000 || s >= ev.end.getTime()) continue
     const es = ev.start.getTime() - slack, ee = ev.end.getTime() + slack
     const overlap = Math.min(e, ee) - Math.max(s, es)
     // Prefer overlap, tie-break on how close the start times are.
